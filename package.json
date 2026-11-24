@@ -1,0 +1,119 @@
+{
+  "name": "hey-human",
+  "displayName": "Hey, Human",
+  "description": "Plays a sound whenever Claude Code needs your input or finishes its turn.",
+  "version": "0.3.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude code", "sound", "notification", "alert", "ai"],
+  "main": "./out/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . -w",
+    "generate-chime": "node scripts/generate-chime.js",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "22.x",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.9.3"
+  },
+  "contributes": {
+    "commands": [
+      { "command": "heyHuman.chooseSound", "title": "Hey, Human: Choose Sound..." },
+      { "command": "heyHuman.testSound", "title": "Hey, Human: Play Test Sound" },
+      { "command": "heyHuman.toggleMute", "title": "Hey, Human: Toggle Mute" },
+      { "command": "heyHuman.installHooks", "title": "Hey, Human: Install Claude Code Hooks" },
+      { "command": "heyHuman.uninstallHooks", "title": "Hey, Human: Remove Claude Code Hooks" },
+      { "command": "heyHuman.showLog", "title": "Hey, Human: Show Log" }
+    ],
+    "configuration": {
+      "title": "Hey, Human",
+      "properties": {
+        "heyHuman.enabled": {
+          "type": "boolean",
+          "default": true,
+          "order": 0,
+          "description": "Play sounds when Claude Code is waiting for you."
+        },
+        "heyHuman.needsInputSound": {
+          "type": "string",
+          "default": "faaah",
+          "order": 1,
+          "enum": [
+            "chime",
+            "vine-boom",
+            "error",
+            "heknew",
+            "faaah",
+            "brother-ewwwwwww",
+            "chicken-on-tree-screaming",
+            "emotional-damage-meme",
+            "oh-shit-not-good",
+            "custom",
+            "none"
+          ],
+          "description": "Sound when Claude needs your input (permission prompt, or idle waiting for a reply). 'custom' uses Custom Sound Path; 'none' is silent."
+        },
+        "heyHuman.finishedSound": {
+          "type": "string",
+          "default": "faaah",
+          "order": 2,
+          "enum": [
+            "chime",
+            "vine-boom",
+            "error",
+            "heknew",
+            "faaah",
+            "brother-ewwwwwww",
+            "chicken-on-tree-screaming",
+            "emotional-damage-meme",
+            "oh-shit-not-good",
+            "custom",
+            "none"
+          ],
+          "description": "Sound when Claude finishes its turn. 'custom' uses Custom Sound Path; 'none' is silent."
+        },
+        "heyHuman.customSoundPath": {
+          "type": "string",
+          "default": "",
+          "order": 3,
+          "description": "Absolute path to a .wav or .mp3 file, used by any sound set to 'custom'."
+        },
+        "heyHuman.volume": {
+          "type": "integer",
+          "default": 70,
+          "minimum": 0,
+          "maximum": 100,
+          "order": 4,
+          "description": "Volume of the sound (0-100)."
+        },
+        "heyHuman.onlyWhenUnfocused": {
+          "type": "boolean",
+          "default": false,
+          "order": 5,
+          "description": "Only play when this VS Code window is not focused."
+        },
+        "heyHuman.matchWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "order": 6,
+          "description": "Only play in the window whose workspace contains the Claude session's working directory. Turn off to play in every window."
+        },
+        "heyHuman.cooldownMs": {
+          "type": "number",
+          "default": 1500,
+          "order": 7,
+          "description": "Minimum milliseconds between two sounds."
+        }
+      }
+    }
+  }
+}
