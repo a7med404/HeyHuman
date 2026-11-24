@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#2B2440"/>
+  <!-- sound waves -->
+  <path d="M60 90 Q44 120 60 150" fill="none" stroke="#FFC857" stroke-width="11" stroke-linecap="round"/>
+  <path d="M196 90 Q212 120 196 150" fill="none" stroke="#FFC857" stroke-width="11" stroke-linecap="round"/>
+  <path d="M38 74 Q14 120 38 166" fill="none" stroke="#A88A52" stroke-width="11" stroke-linecap="round"/>
+  <path d="M218 74 Q242 120 218 166" fill="none" stroke="#A88A52" stroke-width="11" stroke-linecap="round"/>
+  <!-- bell -->
+  <circle cx="128" cy="198" r="17" fill="#FFC857"/>
+  <circle cx="128" cy="58" r="11" fill="#FFFFFF"/>
+  <path d="M128 62 C98 62 82 86 82 116 L82 150 L66 180 L190 180 L174 150 L174 116 C174 86 158 62 128 62 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+</svg>

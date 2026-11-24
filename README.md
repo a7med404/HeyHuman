@@ -25,7 +25,7 @@ npm install
 - **Install it permanently:**
   ```sh
   npm run package
-  code --install-extension hey-human-0.3.0.vsix
+  code --install-extension hey-human-0.3.1.vsix
   ```
 
 ## Commands

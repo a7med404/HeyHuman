@@ -9,3 +9,4 @@ tsconfig.json
 **/.DS_Store
 *.vsix
 # sounds/ and out/ must ship in the package
+images/*.svg

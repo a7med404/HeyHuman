@@ -2,9 +2,10 @@
   "name": "hey-human",
   "displayName": "Hey, Human",
   "description": "Plays a sound whenever Claude Code needs your input or finishes its turn.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "a7med404",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/a7med404/HeyHuman.git"
