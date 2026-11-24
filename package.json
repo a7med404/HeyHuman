@@ -3,8 +3,16 @@
   "displayName": "Hey, Human",
   "description": "Plays a sound whenever Claude Code needs your input or finishes its turn.",
   "version": "0.3.0",
-  "publisher": "local",
+  "publisher": "a7med404",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a7med404/HeyHuman.git"
+  },
+  "homepage": "https://github.com/a7med404/HeyHuman",
+  "bugs": {
+    "url": "https://github.com/a7med404/HeyHuman/issues"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -17,7 +25,7 @@
     "watch": "tsc -p . -w",
     "generate-chime": "node scripts/generate-chime.js",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package --allow-missing-repository"
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "22.x",
