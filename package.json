@@ -1,8 +1,8 @@
 {
   "name": "hey-human",
   "displayName": "Hey, Human",
-  "description": "Plays a sound whenever Claude Code needs your input or finishes its turn.",
-  "version": "0.3.1",
+  "description": "Hear when Claude Code needs you. Plays a sound when Claude asks for permission, waits for your input, or finishes its turn.",
+  "version": "1.0.0",
   "publisher": "a7med404",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -17,31 +17,89 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
-  "keywords": ["claude", "claude code", "sound", "notification", "alert", "ai"],
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "anthropic",
+    "ai agent",
+    "sound",
+    "notification",
+    "alert",
+    "permission prompt",
+    "hooks",
+    "productivity"
+  ],
   "main": "./out/extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc -p . -w",
-    "generate-chime": "node scripts/generate-chime.js",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
+    "test:integration": "npm run compile && node scripts/integration-test.js",
+    "generate-sounds": "node scripts/generate-sounds.js",
     "vscode:prepublish": "npm run compile",
+    "vscode:uninstall": "node ./out/uninstall.js",
     "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "22.x",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.2.0",
     "typescript": "^5.9.3"
   },
   "contributes": {
     "commands": [
-      { "command": "heyHuman.chooseSound", "title": "Hey, Human: Choose Sound..." },
-      { "command": "heyHuman.testSound", "title": "Hey, Human: Play Test Sound" },
-      { "command": "heyHuman.toggleMute", "title": "Hey, Human: Toggle Mute" },
-      { "command": "heyHuman.installHooks", "title": "Hey, Human: Install Claude Code Hooks" },
-      { "command": "heyHuman.uninstallHooks", "title": "Hey, Human: Remove Claude Code Hooks" },
-      { "command": "heyHuman.showLog", "title": "Hey, Human: Show Log" }
+      {
+        "command": "heyHuman.menu",
+        "title": "Hey, Human: Open Menu"
+      },
+      {
+        "command": "heyHuman.chooseSound",
+        "title": "Hey, Human: Choose Sound..."
+      },
+      {
+        "command": "heyHuman.testSound",
+        "title": "Hey, Human: Play Test Sound"
+      },
+      {
+        "command": "heyHuman.toggleMute",
+        "title": "Hey, Human: Toggle Mute"
+      },
+      {
+        "command": "heyHuman.snooze",
+        "title": "Hey, Human: Snooze..."
+      },
+      {
+        "command": "heyHuman.endSnooze",
+        "title": "Hey, Human: End Snooze"
+      },
+      {
+        "command": "heyHuman.installHooks",
+        "title": "Hey, Human: Install Claude Code Hooks"
+      },
+      {
+        "command": "heyHuman.uninstallHooks",
+        "title": "Hey, Human: Remove Claude Code Hooks"
+      },
+      {
+        "command": "heyHuman.openSettings",
+        "title": "Hey, Human: Open Settings"
+      },
+      {
+        "command": "heyHuman.openWalkthrough",
+        "title": "Hey, Human: Open Setup Guide"
+      },
+      {
+        "command": "heyHuman.showLog",
+        "title": "Hey, Human: Show Log"
+      }
     ],
     "configuration": {
       "title": "Hey, Human",
@@ -57,11 +115,15 @@
           "default": "faaah",
           "order": 1,
           "enum": [
+            "faaah",
             "chime",
+            "ding",
+            "pop",
+            "rise",
+            "knock",
             "vine-boom",
             "error",
             "heknew",
-            "faaah",
             "brother-ewwwwwww",
             "chicken-on-tree-screaming",
             "emotional-damage-meme",
@@ -76,11 +138,15 @@
           "default": "faaah",
           "order": 2,
           "enum": [
+            "faaah",
             "chime",
+            "ding",
+            "pop",
+            "rise",
+            "knock",
             "vine-boom",
             "error",
             "heknew",
-            "faaah",
             "brother-ewwwwwww",
             "chicken-on-tree-screaming",
             "emotional-damage-meme",
@@ -90,10 +156,33 @@
           ],
           "description": "Sound when Claude finishes its turn. 'custom' uses Custom Sound Path; 'none' is silent."
         },
+        "heyHuman.errorSound": {
+          "type": "string",
+          "default": "error",
+          "order": 3,
+          "enum": [
+            "faaah",
+            "chime",
+            "ding",
+            "pop",
+            "rise",
+            "knock",
+            "vine-boom",
+            "error",
+            "heknew",
+            "brother-ewwwwwww",
+            "chicken-on-tree-screaming",
+            "emotional-damage-meme",
+            "oh-shit-not-good",
+            "custom",
+            "none"
+          ],
+          "description": "Sound when Claude stops because of an error, such as a rate limit or a server error. 'custom' uses Custom Sound Path; 'none' is silent."
+        },
         "heyHuman.customSoundPath": {
           "type": "string",
           "default": "",
-          "order": 3,
+          "order": 4,
           "description": "Absolute path to a .wav or .mp3 file, used by any sound set to 'custom'."
         },
         "heyHuman.volume": {
@@ -101,28 +190,90 @@
           "default": 70,
           "minimum": 0,
           "maximum": 100,
-          "order": 4,
+          "order": 5,
           "description": "Volume of the sound (0-100)."
+        },
+        "heyHuman.spokenAlerts": {
+          "type": "boolean",
+          "default": false,
+          "description": "After the sound, say which project is waiting, for example \"Claude needs you in my-app\". Uses the operating system's voice.",
+          "order": 6
+        },
+        "heyHuman.minTurnSeconds": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "description": "While this window is focused, stay quiet when Claude finishes a turn shorter than this many seconds. Turns always alert when the window is not focused. 0 alerts for every turn.",
+          "order": 7
+        },
+        "heyHuman.desktopNotification": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also show a desktop notification with Claude's message when this window is not focused. macOS and Linux only.",
+          "order": 8
         },
         "heyHuman.onlyWhenUnfocused": {
           "type": "boolean",
           "default": false,
-          "order": 5,
+          "order": 9,
           "description": "Only play when this VS Code window is not focused."
         },
         "heyHuman.matchWorkspace": {
           "type": "boolean",
           "default": true,
-          "order": 6,
+          "order": 10,
           "description": "Only play in the window whose workspace contains the Claude session's working directory. Turn off to play in every window."
         },
         "heyHuman.cooldownMs": {
           "type": "number",
           "default": 1500,
-          "order": 7,
+          "order": 11,
           "description": "Minimum milliseconds between two sounds."
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "setup",
+        "title": "Get started with Hey, Human",
+        "description": "Hear when Claude Code needs you. Three steps, about a minute.",
+        "steps": [
+          {
+            "id": "hooks",
+            "title": "Install the Claude Code hooks",
+            "description": "Hey, Human hears from Claude through hooks in your Claude Code settings.\n[Install hooks](command:heyHuman.installHooks)",
+            "media": {
+              "markdown": "walkthrough/hooks.md"
+            },
+            "completionEvents": [
+              "onCommand:heyHuman.installHooks"
+            ]
+          },
+          {
+            "id": "sound",
+            "title": "Check and choose your sound",
+            "description": "Make sure you can hear it, then pick the sounds you like.\n[Play test sound](command:heyHuman.testSound)\n[Choose sound](command:heyHuman.chooseSound)",
+            "media": {
+              "markdown": "walkthrough/sound.md"
+            },
+            "completionEvents": [
+              "onCommand:heyHuman.testSound"
+            ]
+          },
+          {
+            "id": "session",
+            "title": "Start a new Claude Code session",
+            "description": "Sessions that were already running need a restart to pick up the hooks.\n[Open settings](command:heyHuman.openSettings)",
+            "media": {
+              "markdown": "walkthrough/session.md"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "galleryBanner": {
+    "color": "#2B2440",
+    "theme": "dark"
   }
 }

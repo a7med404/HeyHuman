@@ -1,6 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { CLAUDE_SETTINGS_FILE, HOOK_EVENTS } from './config';
+import { CLAUDE_SETTINGS_FILE, INSTALLED_HOOKS } from './constants';
+
+// This module must not import `vscode`: it is also used by the uninstall script and the tests.
 
 /** Trailing shell comment that identifies hooks owned by this extension. */
 const MARKER = '# hey-human';
@@ -8,8 +10,10 @@ const MARKER = '# hey-human';
 const LEGACY_MARKER = '# claude-is-waiting';
 
 // Written to a temp name then renamed, so the watcher never sees a half-written file.
+// The file name ends with $PPID, the Claude Code process, so the extension can find the
+// terminal that session runs in.
 const HOOK_COMMAND =
-  'd="$HOME/.claude/hey-human/events"; mkdir -p "$d"; f="$d/$(date +%s)-$$"; ' +
+  'd="$HOME/.claude/hey-human/events"; mkdir -p "$d"; f="$d/$(date +%s)-$$-$PPID"; ' +
   `cat > "$f.tmp" && mv "$f.tmp" "$f.json" ${MARKER}`;
 
 interface Hook {
@@ -25,18 +29,16 @@ interface ClaudeSettings {
   [key: string]: unknown;
 }
 
-function readSettings(): ClaudeSettings {
-  if (!fs.existsSync(CLAUDE_SETTINGS_FILE)) return {};
-  const text = fs.readFileSync(CLAUDE_SETTINGS_FILE, 'utf8');
+function readSettings(file: string): ClaudeSettings {
+  if (!fs.existsSync(file)) return {};
+  const text = fs.readFileSync(file, 'utf8');
   return text.trim() ? JSON.parse(text) : {};
 }
 
-function writeSettings(settings: ClaudeSettings): void {
-  fs.mkdirSync(path.dirname(CLAUDE_SETTINGS_FILE), { recursive: true });
-  if (fs.existsSync(CLAUDE_SETTINGS_FILE)) {
-    fs.copyFileSync(CLAUDE_SETTINGS_FILE, `${CLAUDE_SETTINGS_FILE}.bak`);
-  }
-  fs.writeFileSync(CLAUDE_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`);
+function writeSettings(file: string, settings: ClaudeSettings): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.bak`);
+  fs.writeFileSync(file, `${JSON.stringify(settings, null, 2)}\n`);
 }
 
 function isOurs(hook: Hook): boolean {
@@ -61,29 +63,51 @@ function stripOurHooks(settings: ClaudeSettings): void {
 }
 
 /** Adds our hooks to the user's Claude Code settings. Safe to run repeatedly. */
-export function installHooks(): void {
-  const settings = readSettings();
+export function installHooks(file = CLAUDE_SETTINGS_FILE): void {
+  const settings = readSettings(file);
   stripOurHooks(settings);
   settings.hooks ??= {};
-  for (const event of HOOK_EVENTS) {
-    (settings.hooks[event] ??= []).push({ hooks: [{ type: 'command', command: HOOK_COMMAND }] });
+  for (const { event, matcher } of INSTALLED_HOOKS) {
+    (settings.hooks[event] ??= []).push({
+      ...(matcher ? { matcher } : {}),
+      hooks: [{ type: 'command', command: HOOK_COMMAND }],
+    });
   }
-  writeSettings(settings);
+  writeSettings(file, settings);
 }
 
 /** Removes only this extension's hooks, leaving every other setting untouched. */
-export function uninstallHooks(): void {
-  const settings = readSettings();
+export function uninstallHooks(file = CLAUDE_SETTINGS_FILE): void {
+  if (!fs.existsSync(file)) return;
+  const settings = readSettings(file);
   stripOurHooks(settings);
-  writeSettings(settings);
+  writeSettings(file, settings);
 }
 
-export function hooksInstalled(): boolean {
+function ourHooks(file: string, event: string): Hook[] {
+  const hooks = readSettings(file).hooks ?? {};
+  return (hooks[event] ?? []).flatMap((group) => (group.hooks ?? []).filter(isOurs));
+}
+
+/** True when every hook is present and matches the command this version installs. */
+export function hooksInstalled(file = CLAUDE_SETTINGS_FILE): boolean {
   try {
-    const hooks = readSettings().hooks ?? {};
-    return HOOK_EVENTS.every((event) =>
-      (hooks[event] ?? []).some((group) => (group.hooks ?? []).some(isOurs)),
+    return INSTALLED_HOOKS.every(({ event }) =>
+      ourHooks(file, event).some((hook) => hook.command === HOOK_COMMAND),
     );
+  } catch {
+    return false;
+  }
+}
+
+/** True when an earlier version's hooks are present and need replacing with the current ones. */
+export function hooksOutdated(file = CLAUDE_SETTINGS_FILE): boolean {
+  try {
+    const settings = readSettings(file);
+    const any = Object.values(settings.hooks ?? {}).some((groups) =>
+      (groups ?? []).some((group) => (group.hooks ?? []).some(isOursOrLegacy)),
+    );
+    return any && !hooksInstalled(file);
   } catch {
     return false;
   }

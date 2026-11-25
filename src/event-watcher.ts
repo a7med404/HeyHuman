@@ -1,14 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { EVENTS_DIR } from './config';
+import { EVENTS_DIR, HookPayload } from './constants';
 import { Logger } from './logger';
-
-/** The fields we use from a Claude Code hook payload. */
-export interface HookPayload {
-  hook_event_name?: string;
-  cwd?: string;
-  message?: string;
-}
 
 const MAX_EVENT_AGE_MS = 60_000;
 
@@ -50,6 +43,9 @@ export class EventWatcher {
       // Already pruned by another window, or not valid JSON: nothing to act on.
       return;
     }
+    // File names are <seconds>-<hook pid>-<claude pid>.json.
+    const claudePid = Number(/^\d+-\d+-(\d+)\.json$/.exec(name)?.[1]);
+    if (Number.isInteger(claudePid) && claudePid > 1) payload.claudePid = claudePid;
     this.onEvent(payload);
   }
 

@@ -1,12 +1,16 @@
 .vscode/**
+.github/**
 src/**
 scripts/**
 node_modules/**
+out/test/**
 .gitignore
 tsconfig.json
+CLAUDE.md
+images/*.svg
 **/*.map
 **/*.ts
 **/.DS_Store
 *.vsix
-# sounds/ and out/ must ship in the package
-images/*.svg
+# sounds/ and the rest of out/ must ship in the package
+.vscode-test/**
